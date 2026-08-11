@@ -22,49 +22,8 @@ async function uploadToCloudinary(file: File, cloudName: string, apiKey: string,
   return data.secure_url
 }
 
-export default createRoute(async (c) => {
-  let message = ''
-
-  if (c.req.method === 'POST') {
-    const body = await c.req.parseBody({ all: true })
-    const action = body['action']
-
-    if (action === 'update_settings') {
-      const waNumber = body['whatsapp_number'] as string
-      const itemsPerPage = body['items_per_page'] as string
-      await c.env.DB.prepare("UPDATE settings SET value = ? WHERE key = 'whatsapp_number'").bind(waNumber).run()
-      await c.env.DB.prepare("UPDATE settings SET value = ? WHERE key = 'items_per_page'").bind(itemsPerPage).run()
-      message = 'Pengaturan berhasil diperbarui.'
-    } 
-    else if (action === 'add_product') {
-      const name = body['name'] as string
-      const description = body['description'] as string
-      const files = (Array.isArray(body['images']) ? body['images'] : [body['images']]).filter(f => f instanceof File && f.size > 0) as File[]
-      
-      const insertResult = await c.env.DB.prepare("INSERT INTO products (name, description) VALUES (?, ?) RETURNING id").bind(name, description).first()
-      const productId = insertResult?.id
-
-      if (productId && files.length > 0) {
-        for (const file of files) {
-          try {
-            const url = await uploadToCloudinary(file, c.env.CLOUDINARY_CLOUD_NAME, c.env.CLOUDINARY_API_KEY, c.env.CLOUDINARY_API_SECRET)
-            if (url) {
-              await c.env.DB.prepare("INSERT INTO product_images (product_id, url) VALUES (?, ?)").bind(productId, url).run()
-            }
-          } catch (e) {
-            console.error("Gagal upload gambar", e)
-          }
-        }
-      }
-      message = 'Produk berhasil ditambahkan.'
-    }
-    else if (action === 'delete_product') {
-      const productId = body['product_id'] as string
-      await c.env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run()
-      message = 'Produk berhasil dihapus.'
-    }
-  }
-
+// Fungsi utama untuk me-render Dashboard beserta form-form di dalamnya
+async function renderDashboard(c: any, message: string = '') {
   const { results: settingsRaw } = await c.env.DB.prepare("SELECT * FROM settings").all()
   const waNumber = settingsRaw.find((s: any) => s.key === 'whatsapp_number')?.value || ''
   const itemsPerPage = settingsRaw.find((s: any) => s.key === 'items_per_page')?.value || ''
@@ -155,4 +114,53 @@ export default createRoute(async (c) => {
       </div>
     </div>
   )
+}
+
+// Handler untuk Request GET (Membuka Dashboard)
+export default createRoute(async (c) => {
+  return renderDashboard(c)
+})
+
+// Handler untuk Request POST (Update Setting, Tambah/Hapus Produk)
+export const POST = createRoute(async (c) => {
+  let message = ''
+  const body = await c.req.parseBody({ all: true })
+  const action = body['action']
+
+  if (action === 'update_settings') {
+    const waNumber = body['whatsapp_number'] as string
+    const itemsPerPage = body['items_per_page'] as string
+    await c.env.DB.prepare("UPDATE settings SET value = ? WHERE key = 'whatsapp_number'").bind(waNumber).run()
+    await c.env.DB.prepare("UPDATE settings SET value = ? WHERE key = 'items_per_page'").bind(itemsPerPage).run()
+    message = 'Pengaturan berhasil diperbarui.'
+  } 
+  else if (action === 'add_product') {
+    const name = body['name'] as string
+    const description = body['description'] as string
+    const files = (Array.isArray(body['images']) ? body['images'] : [body['images']]).filter(f => f instanceof File && f.size > 0) as File[]
+    
+    const insertResult = await c.env.DB.prepare("INSERT INTO products (name, description) VALUES (?, ?) RETURNING id").bind(name, description).first()
+    const productId = insertResult?.id
+
+    if (productId && files.length > 0) {
+      for (const file of files) {
+        try {
+          const url = await uploadToCloudinary(file, c.env.CLOUDINARY_CLOUD_NAME, c.env.CLOUDINARY_API_KEY, c.env.CLOUDINARY_API_SECRET)
+          if (url) {
+            await c.env.DB.prepare("INSERT INTO product_images (product_id, url) VALUES (?, ?)").bind(productId, url).run()
+          }
+        } catch (e) {
+          console.error("Gagal upload gambar", e)
+        }
+      }
+    }
+    message = 'Produk berhasil ditambahkan.'
+  }
+  else if (action === 'delete_product') {
+    const productId = body['product_id'] as string
+    await c.env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run()
+    message = 'Produk berhasil dihapus.'
+  }
+
+  return renderDashboard(c, message)
 })
