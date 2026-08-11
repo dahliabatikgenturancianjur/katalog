@@ -40,31 +40,40 @@ export default function ProductGrid({ products, totalPages, currentPage, waNumbe
         </div>
       </div>
 
-      <div class="print-area grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        {products.map((product) => (
-          <div key={product.id} onClick={() => openModal(product)} class="cursor-pointer bg-white border rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden group">
-            <div class="w-full h-40 md:h-56 bg-gray-200 overflow-hidden relative">
-              {product.images.length > 0 ? (
-                <img src={product.images[0].url} alt={product.name} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              ) : (
-                <div class="flex items-center justify-center h-full text-gray-400 text-sm">No Image</div>
-              )}
+      {products.length === 0 ? (
+        <div class="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border">
+          Belum ada produk yang ditampilkan di halaman ini.
+        </div>
+      ) : (
+        <div class="print-area grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {products.map((product) => (
+            <div key={product.id} onClick={() => openModal(product)} class="cursor-pointer bg-white border rounded-xl shadow-sm hover:shadow-lg transition-all overflow-hidden group">
+              <div class="w-full h-40 md:h-56 bg-gray-200 overflow-hidden relative">
+                {product.images.length > 0 ? (
+                  <img src={product.images[0].url} alt={product.name} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div class="flex items-center justify-center h-full text-gray-400 text-sm">No Image</div>
+                )}
+              </div>
+              <div class="p-4">
+                <h3 class="font-bold text-lg mb-1 group-hover:text-blue-600 transition-colors">{product.name}</h3>
+                <p class="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+              </div>
             </div>
-            <div class="p-4">
-              <h3 class="font-bold text-lg mb-1 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-              <p class="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div class="flex flex-wrap justify-center mt-10 gap-2 no-print">
-        {Array.from({ length: totalPages }).map((_, i) => (
-          <a key={i} href={`/?page=${i + 1}`} class={`px-4 py-2 border rounded-lg font-medium transition-colors ${currentPage === i + 1 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-            {i + 1}
-          </a>
-        ))}
-      </div>
+      {/* RENDER PAGINASI DI SINI */}
+      {totalPages > 1 && (
+        <div class="flex flex-wrap justify-center mt-10 gap-2 no-print">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <a key={i} href={`/?page=${i + 1}`} class={`px-4 py-2 border rounded-lg font-medium transition-colors ${currentPage === i + 1 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+              {i + 1}
+            </a>
+          ))}
+        </div>
+      )}
 
       {selectedProduct && (
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4 md:p-0 no-print" onClick={closeModal}>
