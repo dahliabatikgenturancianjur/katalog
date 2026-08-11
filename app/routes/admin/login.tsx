@@ -32,7 +32,8 @@ export const POST = createRoute(async (c) => {
   
   if (user) {
     const token = await sign({ id: user.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 }, c.env.JWT_SECRET)
-    setCookie(c, 'admin_token', token)
+    // PERBAIKAN: Menambahkan aturan path, httpOnly, dan secure pada Cookie
+    setCookie(c, 'admin_token', token, { path: '/', httpOnly: true, secure: true })
     return c.redirect('/admin')
   } else {
     const error = 'Username atau Password salah!'
