@@ -4,7 +4,8 @@ import { verify } from 'hono/jwt'
 
 export default createRoute(async (c, next) => {
   if (c.req.path === '/admin/login') {
-    return next()
+    await next()
+    return
   }
 
   const token = getCookie(c, 'admin_token')
@@ -14,7 +15,7 @@ export default createRoute(async (c, next) => {
 
   try {
     await verify(token, c.env.JWT_SECRET)
-    return next()
+    await next()
   } catch (err) {
     return c.redirect('/admin/login')
   }
