@@ -17,9 +17,10 @@ export default createRoute(async (c) => {
   const { results: productsRaw } = await c.env.DB.prepare("SELECT * FROM products ORDER BY id DESC LIMIT ? OFFSET ?").bind(limit, offset).all()
   const { results: imagesRaw } = await c.env.DB.prepare("SELECT * FROM product_images").all()
 
-  // 4. Hitung Total Halaman
-  const { count } = await c.env.DB.prepare("SELECT COUNT(*) as c FROM products").first() || { count: 0 }
-  const totalPages = Math.ceil(Number(count) / limit)
+  // 4. Hitung Total Halaman (BUG DIPERBAIKI DI SINI)
+  const countResult = await c.env.DB.prepare("SELECT COUNT(*) as total FROM products").first()
+  const totalCount = countResult ? countResult.total : 0
+  const totalPages = Math.ceil(Number(totalCount) / limit)
 
   // 5. Gabungkan produk dengan gambarnya
   const products = productsRaw.map((p: any) => ({
